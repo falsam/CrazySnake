@@ -36,10 +36,13 @@ Global ZoomX, ZoomY, BounceX.f, BounceY.f, Sens
 Global TileSeparation.f, x, y, TileSize, TileSize
 Global StartTime.f, TimeOut.f
 Global ScreenDefaultColor, GameDefaultColor, GameColor, TextColor, LineColor
-Global SnakeHeadColor, SnakeBodyColor, SnakeOutlineColor
+Global SnakeDefaultHeadColor, SnakeDefaultBodyColor, SnakeHeadColor, SnakeBodyColor, SnakeOutlineColor
 Global Text.s, PosX.f, PosY.f
 Global Dir.s, PreviousDir.s
 Global wx,wy
+
+Global LayerEffectFG    ;Forground layer Effect
+Global LayerEffectBG    ;Background layer Effect
 
 Global Dim TileRotation.f(4, 4)
 
@@ -54,26 +57,35 @@ EndStructure
 Global NewList Snakes.Snake()
 Global SnakePart.Snake
 
+Declare LayerEffectReset(Color = #PB_Ignore)
+
 ;Engine Init
 InitSprite()
 InitKeyboard()
 
-;Load Font
+;Setup Font
 Font15 = LoadFont(#PB_Any, "System", 15)
 Font20 = LoadFont(#PB_Any, "System", 20)
 Font25 = LoadFont(#PB_Any, "System", 23)
 Font40 = LoadFont(#PB_Any, "System", 40,#PB_Font_Bold)
 
-;Color
+;Setup Color
 ScreenDefaultColor = RGB(127, 182, 127)
 GameDefaultColor   = RGB(143, 188, 143)
 LineColor          = RGB(210, 180, 140)
 TextColor          = RGB(255, 255, 255)
 
 ;Setup Snake
-SnakeHeadColor     = RGB(210, 180, 140)
-SnakeBodyColor     = RGB(255, 248, 220)
-SnakeOutlineColor  = RGB(184, 134, 11)
+SnakeDefaultHeadColor = RGB(210, 180, 140)
+SnakeHeadColor        = SnakeDefaultHeadColor
+
+SnakeDefaultBodyColor = RGB(255, 248, 220)
+SnakeBodyColor        = SnakeDefaultBodyColor
+SnakeOutlineColor     = RGB(184, 134, 11)
+
+;Setup Layer Effect
+LayerEffectFG = CreateImage(#PB_Any, 400, 400, 32, #PB_Image_Transparent)
+LayerEffectBG = CreateImage(#PB_Any, 400, 400, 32, #PB_Image_Transparent)
 
 ;Screen
 OpenWindow(#MainForm, 0, 0, 600, 600, "Crazy Snake", #PB_Window_SystemMenu|#PB_Window_ScreenCentered)
@@ -126,7 +138,8 @@ Repeat
       Boom = 0
       
       Score = 0
-      
+      TimeOut = 199
+            
       vx = 1 : vy = 0 ;Snake starts right   
       KLR = #False    ;Left Key & Right Key disable, because of snake moving right
       KUD = #True     ;Up key & down key enable
@@ -141,6 +154,7 @@ Repeat
       BounceX = 0 : BounceY = 0 : Sens = 1     
       GameColor = GameDefaultColor
       
+      LayerEffectReset()
     EndIf
   EndIf
   
@@ -238,6 +252,7 @@ Repeat
   DrawingMode(#PB_2DDrawing_Transparent)
   DrawingFont(FontID(Font20))
   DrawText(20, 15, "Crazy Snake", TextColor)
+  DrawText(20, 50, "Speed " + Str(200 - TimeOut), TextColor)
   DrawText(450, 15, "Score " + Str(Score), TextColor)
   
   DrawingFont(FontID(Font15))
@@ -255,12 +270,17 @@ Repeat
     LineXY(gx, 0, gx, 399, LineColor)
     LineXY(0, gx, 399, gx, LineColor)
   Next 
+  
   ;1.2 - Draw Grid outline
   DrawingMode(#PB_2DDrawing_Outlined)
   Box(0, 0, 400, 400, LineColor)
-  DrawingMode(#PB_2DDrawing_Default)     
+    
+  ;1.3 - Draw background layer effect
+  DrawingMode(#PB_2DDrawing_AlphaBlend)
+  DrawImage(ImageID(LayerEffectBG), 0, 0)
   
-  ;1.3 - Draw Snake
+  ;1.4 - Draw Snake
+  DrawingMode(#PB_2DDrawing_Default)     
   ForEach Snakes()
     With Snakes()
       Select ListIndex(Snakes())
@@ -282,12 +302,15 @@ Repeat
     EndWith
   Next
   
-  ;1.4 - Draw target
+  ;1.5 - Draw target
   DrawingMode(#PB_2DDrawing_Default)
   Box(tx, ty, 16, 16, RGB(127, 255, 0))
   DrawingMode(#PB_2DDrawing_Outlined)
   Box(tx, ty, 16, 16, RGB(0, 0, 0))
   
+  ;1.6 - Draw forground LayerEffect
+  DrawingMode(#PB_2DDrawing_AlphaBlend)
+  DrawImage(ImageID(LayerEffectFG), 0, 0)
   
   StopDrawing()
   
@@ -310,9 +333,12 @@ Repeat
   ;- Game effect
   If GameState = #Status_GameInPlay 
     
+    TimeOut - 0.001
+    
     Select Score         
       Case 0 To 2 ;Bounce game ++ (KCC Idea)
-        TimeOut = 200
+        
+        
         BounceX + 0.03 : BounceY + 0.03
         Angle + 0.1
         PosX = BounceX * Cos(Angle)
@@ -322,6 +348,7 @@ Repeat
         EndIf
         
       Case 3 To 4 ;Bounce Game -- (KCC Idea)
+        LayerEffectReset()
         If BounceX > 0
           BounceX - 0.04 : BounceY - 0.04
         EndIf
@@ -336,17 +363,27 @@ Repeat
         EndIf
         
       Case 5
+        StartDrawing(ImageOutput(LayerEffectBG))
+        DrawingMode(#PB_2DDrawing_AlphaBlend)         
+        DrawingFont(FontID(Font20))
+        DrawRotatedText(Random(399), Random(399), "I'am Crazy", Random(360), RGBA(Random(255),Random(255),Random(255),Random(255)))
+        StopDrawing()
+
         Angle = 0 : PosX = 0 : PosY = 0
-       
+        SnakeBodyColor = RGB(255, Random(248), 220)
+        SnakeHeadColor = RGB(0, Random(248), 220)
+        
       Case 6 To 9 ;Right Rotate
-        TimeOut = 200
+        LayerEffectReset()
+        SnakeBodyColor = SnakeDefaultBodyColor
+        SnakeHeadColor = SnakeDefaultHeadColor
+        
         If Angle < 45
           Angle + 0.05
           RotateSprite(Game, 0.05, #PB_Relative) 
         EndIf
         
       Case 10 To 14 ;Left Rotate
-        TimeOut = 200
         If Angle > 0
           Angle - 0.05
           RotateSprite(Game, -0.05, #PB_Relative)
@@ -357,19 +394,17 @@ Repeat
         RotateSprite(Game, 0, #PB_Absolute); reset rotation to prevent jump in position during zoom changes.
         
       Case 16 To 19 ;Reduce the size of the game.
-        TimeOut = 200
         If SpriteWidth(Game) <> 250
           ZoomSprite(Game, SpriteWidth(Game) - 1, SpriteWidth(Game) - 1)
         EndIf
         
       Case 20 To 22 ;Enlarge the size of the game.
-        TimeOut = 200
         If SpriteWidth(Game) <> 400
           ZoomSprite(Game, SpriteWidth(Game) + 1, SpriteWidth(Game) + 1)
         EndIf
         
-      Case 23 ;Change the speed
-        TimeOut = 150
+      Case 23 ;Move Windows (Created by Ar-s)
+        ;TimeOut = 150
         If Dir <> PreviousDir
           Select Dir
             Case "G"
@@ -386,23 +421,19 @@ Repeat
           Dir = "none"
         EndIf
         
-      Case 30 ;Change the speed
-        TimeOut = 100 
+      Case 30
         
-      Case 31 ;Change the speed
-        TimeOut = 50
+      Case 31
         
-      Case 32;Change the speed
-        TimeOut = 150
+      Case 32
         
       Case 33 To 37 ;Reduce the width of the game.
-        TimeOut = 200
         If SpriteWidth(Game) > 250
           ZoomX=-1
           ZoomSprite(Game, SpriteWidth(Game) + ZoomX, 400)
         EndIf
+        
       Case 38 To 41 ;Original Size
-        TimeOut = 200
         If SpriteWidth(Game) <> 400
           ZoomX = 1
           If SpriteHeight(Game) <> 400
@@ -415,11 +446,18 @@ Repeat
         EndIf
         
       Case 41 To 43 ;Random color
-        TimeOut = 150
+        StartDrawing(ImageOutput(LayerEffectBG))
+        DrawingMode(#PB_2DDrawing_AlphaBlend)         
+        DrawingFont(FontID(Font20))
+        DrawRotatedText(Random(399), Random(399), "I'am Crazy", Random(360), RGBA(Random(255),Random(255),Random(255),Random(255)))
+        StopDrawing()
+
         GameColor = RGB(Random(255, 0),Random(255, 0),Random(255, 0))
         
-      Case 45 To 48  ;Split (Created by Demivec)
+      Case 44
+        LayerEffectReset()
         
+      Case 45 To 48  ;Split (Created by Demivec)
         If TileSeparation = 0
           Dim TileRotation.f(4, 4) ;reset to zeros for next stage
         EndIf
@@ -458,8 +496,27 @@ Repeat
           PosX = 0: PosY = 0
         EndIf
         
+        
+      Case 59 To 63 ;
+        GameColor = RGB(255, 255, 255)
+        StartDrawing(ImageOutput(LayerEffectFG))
+        DrawingMode(#PB_2DDrawing_AllChannels)      
+        Circle(Random(399), Random(399), Random(100, 10), RGBA(0, 0, 255, Random(120, 30)))
+        StopDrawing()
+        
+      Case 64 ;Reset LayerEffect
+        LayerEffectReset()
+        
+      Case 65 To 66
+        StartDrawing(ImageOutput(LayerEffectFG))
+        DrawingMode(#PB_2DDrawing_AllChannels)
+        LineXY(Random(399), Random(399), Random(399), Random(399), RGBA(Random(255), Random(255), Random(255), Random(255)))
+        StopDrawing()
+        
+      Case 67 ;Reset LayerEffect
+        LayerEffectReset()
+        
       Default ; Fastest speed
-        TimeOut - 0.001
         GameColor = GameDefaultColor
         
     EndSelect
@@ -533,3 +590,22 @@ Repeat
   EndIf
   
 Until KeyboardPushed(#PB_Key_Escape)
+
+Procedure LayerEffectReset(Color = #PB_Ignore)
+  If Color = #PB_Ignore
+    GameColor = GameDefaultColor
+  Else
+    GameColor = Color
+  EndIf
+  
+  StartDrawing(ImageOutput(LayerEffectFG))
+  DrawingMode(#PB_2DDrawing_AllChannels)
+  Box(0, 0, 400, 400, RGBA(0, 0, 0, 0))
+  StopDrawing()
+  
+  StartDrawing(ImageOutput(LayerEffectBG))
+  DrawingMode(#PB_2DDrawing_AllChannels)
+  Box(0, 0, 400, 400, RGBA(0, 0, 0, 0))
+  StopDrawing()
+  
+EndProcedure
