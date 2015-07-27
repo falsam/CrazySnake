@@ -15,6 +15,7 @@ Enumeration
   #Status_GameInPlay
   #Status_GameEndingAnimation
   #Status_GameRestartReady
+  #Status_GameInPause
 EndEnumeration
 
 
@@ -43,6 +44,7 @@ Global wx,wy
 
 Global LayerEffectFG    ;Forground layer Effect
 Global LayerEffectBG    ;Background layer Effect
+Global LayerMessage     ;Message layer
 
 Global Dim TileRotation.f(4, 4)
 
@@ -56,6 +58,11 @@ Structure Snake
 EndStructure
 Global NewList Snakes.Snake()
 Global SnakePart.Snake
+
+;Message
+Global TextPause.s = "Pause"
+
+
 
 Declare LayerEffectReset(Color = #PB_Ignore)
 
@@ -86,6 +93,7 @@ SnakeOutlineColor     = RGB(184, 134, 11)
 ;Setup Layer Effect
 LayerEffectFG = CreateImage(#PB_Any, 400, 400, 32, #PB_Image_Transparent)
 LayerEffectBG = CreateImage(#PB_Any, 400, 400, 32, #PB_Image_Transparent)
+LayerMessage  = CreateImage(#PB_Any, 400, 400, 32, #PB_Image_Transparent)
 
 ;Screen
 OpenWindow(#MainForm, 0, 0, 600, 600, "Crazy Snake", #PB_Window_SystemMenu|#PB_Window_ScreenCentered)
@@ -112,10 +120,10 @@ Repeat
   
   ExamineKeyboard()
   
-  If GameState = #Status_GameRestartReady Or GameState = #Status_GameBeforeFirstStart; GameOver = 2 Or FirstStart = #True
+  If GameState = #Status_GameRestartReady Or GameState = #Status_GameBeforeFirstStart
     If KeyboardReleased(#PB_Key_Up)
       
-      GameState = #Status_GameInPlay ;FirstStart = 0
+      GameState = #Status_GameInPlay 
       
       ;Add 4 Squares to snake
       ClearList(Snakes())
@@ -158,7 +166,7 @@ Repeat
     EndIf
   EndIf
   
-  If GameState = #Status_GameInPlay
+  If GameState = #Status_GameInPlay Or GameState = #Status_GameInPause 
     ;-Keyboard events
     If KeyboardPushed(#PB_Key_Left) And KLR = #True
       dir.s = "G"
@@ -168,10 +176,25 @@ Repeat
       dir.s = "H"
     ElseIf KeyboardPushed(#PB_Key_Down) And KUD = #True
       dir.s = "B"
+    ElseIf KeyboardReleased(#PB_Key_Space)
+      If GameState = #Status_GameInPause 
+        GameState = #Status_GameInPlay
+      Else
+        GameState = #Status_GameInPause 
+        StartDrawing(ImageOutput(LayerMessage))
+        DrawingMode(#PB_2DDrawing_AllChannels)
+        Box(0, 0, 400, 400, RGBA(255, 255, 255, 50))    
+        DrawingMode(#PB_2DDrawing_AlphaBlend)
+        DrawingFont(FontID(Font40))
+        
+        DrawRotatedText((400-TextWidth(TextPause))/2, (400-TextHeight(TextPause))/2, TextPause, 0, RGBA(255, 255, 255, 120))
+        StopDrawing()
+      EndIf
     EndIf
     
+
     ;- Updates the position of the snake
-    If ElapsedMilliseconds() - StartTime  > TimeOut
+    If ElapsedMilliseconds() - StartTime  > TimeOut And GameState <> #Status_GameInPause
        ;-Keyboard events
       Select dir
         Case "G"
@@ -312,7 +335,14 @@ Repeat
   DrawingMode(#PB_2DDrawing_AlphaBlend)
   DrawImage(ImageID(LayerEffectFG), 0, 0)
   
+  ;1.7 - Draw Pause
+  If GameState = #Status_GameInPause
+    DrawingMode(#PB_2DDrawing_AlphaBlend)
+    DrawImage(ImageID(LayerMessage), 0, 0)
+  EndIf
+  
   StopDrawing()
+  
   
   ;- Display game
   If TileSeparation > 0
