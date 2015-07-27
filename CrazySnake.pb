@@ -118,8 +118,10 @@ Repeat
   FlipBuffers()
   ClearScreen(RGB(220, 220, 220))
   
-  ExamineKeyboard()
-  
+  If ExamineKeyboard() = 0 And GameState = #Status_GameInPlay ;Lost focus
+      GameState = #Status_GameInPause 
+  EndIf
+    
   If GameState = #Status_GameRestartReady Or GameState = #Status_GameBeforeFirstStart
     If KeyboardReleased(#PB_Key_Up)
       
@@ -167,6 +169,7 @@ Repeat
   EndIf
   
   If GameState = #Status_GameInPlay Or GameState = #Status_GameInPause 
+    
     ;-Keyboard events
     If KeyboardPushed(#PB_Key_Left) And KLR = #True
       dir.s = "G"
@@ -181,6 +184,10 @@ Repeat
         GameState = #Status_GameInPlay
       Else
         GameState = #Status_GameInPause 
+      EndIf
+    EndIf
+    
+    If GameState = #Status_GameInPause
         StartDrawing(ImageOutput(LayerMessage))
         DrawingMode(#PB_2DDrawing_AllChannels)
         Box(0, 0, 400, 400, RGBA(255, 255, 255, 50))    
@@ -189,9 +196,7 @@ Repeat
         
         DrawRotatedText((400-TextWidth(TextPause))/2, (400-TextHeight(TextPause))/2, TextPause, 0, RGBA(255, 255, 255, 120))
         StopDrawing()
-      EndIf
-    EndIf
-    
+    EndIf      
 
     ;- Updates the position of the snake
     If ElapsedMilliseconds() - StartTime  > TimeOut And GameState <> #Status_GameInPause
@@ -335,8 +340,8 @@ Repeat
   DrawingMode(#PB_2DDrawing_AlphaBlend)
   DrawImage(ImageID(LayerEffectFG), 0, 0)
   
-  ;1.7 - Draw Pause
-  If GameState = #Status_GameInPause
+  ;1.7 - Draw message
+  If GameState = #Status_GameInPause    
     DrawingMode(#PB_2DDrawing_AlphaBlend)
     DrawImage(ImageID(LayerMessage), 0, 0)
   EndIf
