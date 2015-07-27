@@ -155,9 +155,11 @@ Repeat
       KUD = #True     ;Up key & down key enable
       dir = "D"
       
-      
       TargetCreate = #True
       
+      SnakeHeadColor = SnakeDefaultHeadColor
+      SnakeBodyColor = SnakeDefaultBodyColor
+            
       Angle = 0 :
       ZoomX = 0 : ZoomY = 0
       PosX = 0: PosY = 0
