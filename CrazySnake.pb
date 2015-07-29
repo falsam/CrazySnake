@@ -4,8 +4,6 @@
 ; Contributors ideas  : Ar-S, Demivec, KCC, Vera
 ;
 ; Updated             : 29 Juillet 2015
-; Music               : https://soundcloud.com/mutkanto/sets/fast-stuff (Call me Crazy)
-; Langage             : PureBasic version 5.31
 ;
 ; GitHub              : https://github.com/falsam/CrazySnake (Code only)
 ;
