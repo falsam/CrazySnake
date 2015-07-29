@@ -6,7 +6,7 @@ A game into a sprite / Un jeu dans un sprite
 
 ![](http://s242132022.onlinehome.fr/Download/PureBasic/capture/CrazySnake.jpg)
 
-- CrazySnake with sounds / CrazySnake avec les sons
-- 
+CrazySnake with sounds / CrazySnake avec les sons
+
 http://s242132022.onlinehome.fr/download/purebasic/CrazySnake.zip
 
