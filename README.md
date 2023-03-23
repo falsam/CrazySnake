@@ -8,5 +8,5 @@ A game into a sprite / Un jeu dans un sprite
 
 CrazySnake with sounds / CrazySnake avec les sons
 
-http://s242132022.onlinehome.fr/download/purebasic/CrazySnake.zip
+https://falsam.com/download/purebasic/CrazySnake.zip
 
